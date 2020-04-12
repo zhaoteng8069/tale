@@ -3,6 +3,12 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.2.4.RELEASE</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
 
     <groupId>io.github.otale</groupId>
     <artifactId>tale</artifactId>
@@ -21,10 +27,26 @@
 
     <dependencies>
         <!-- mvc -->
-        <dependency>
+        <!--<dependency>
             <groupId>com.bladejava</groupId>
             <artifactId>blade-mvc</artifactId>
             <version>${blade-mvc.version}</version>
+        </dependency>-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- 数据库操作 -->
@@ -77,137 +99,39 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.16.18</version>
+            <!--<version>1.16.18</version>-->
             <scope>provided</scope>
         </dependency>
 
+        <!-- 测试 -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
+            <!--<version>4.12</version>-->
+            <scope>te·st</scope>
+        </dependency>
+
+        <!-- 工具类 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+           <!-- <version>3.7</version>-->
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-http</artifactId>
+            <version>4.1.30.Final</version>
         </dependency>
     </dependencies>
 
-    <repositories>
-        <repository>
-            <id>oss-releases</id>
-            <url>https://oss.sonatype.org/content/repositories/releases</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>oss-snapshots</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 
-    <profiles>
-        <profile>
-            <id>prod</id>
-            <properties>
-                <profiles.active>prod</profiles.active>
-            </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/java</directory>
-                        <filtering>false</filtering>
-                        <excludes>
-                            <exclude>**/*.java</exclude>
-                        </excludes>
-                    </resource>
-                </resources>
-            </build>
-        </profile>
-        <profile>
-            <id>dev</id>
-            <properties>
-                <profiles.active>dev</profiles.active>
-            </properties>
-            <activation>
-                <!-- Set to activate this configuration by default -->
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/java</directory>
-                        <filtering>false</filtering>
-                    </resource>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                        <filtering>false</filtering>
-                    </resource>
-                    <resource>
-                        <directory>src/main/test</directory>
-                        <filtering>false</filtering>
-                    </resource>
-                    <resource>
-                        <directory>src/test/resources</directory>
-                        <filtering>false</filtering>
-                    </resource>
-                </resources>
-            </build>
-        </profile>
-    </profiles>
+
 
     <build>
-        <finalName>tale</finalName>
         <plugins>
             <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <appendAssemblyId>false</appendAssemblyId>
-                    <descriptors>
-                        <descriptor>package.xml</descriptor>
-                    </descriptors>
-                    <outputDirectory>${project.build.directory}/dist/</outputDirectory>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>com.tale.Application</mainClass>
-                            <classpathPrefix>lib/</classpathPrefix>
-                            <addClasspath>true</addClasspath>
-                        </manifest>
-                        <manifestEntries>
-                            <Class-Path>resources/</Class-Path>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

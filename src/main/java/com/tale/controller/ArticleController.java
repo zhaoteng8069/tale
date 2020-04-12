@@ -1,14 +1,8 @@
 package com.tale.controller;
 
-import com.blade.exception.ValidatorException;
-import com.blade.ioc.annotation.Inject;
-import com.blade.kit.StringKit;
-import com.blade.mvc.annotation.*;
-import com.blade.mvc.http.Request;
-import com.blade.mvc.http.Response;
-import com.blade.mvc.ui.RestResponse;
 import com.tale.bootstrap.TaleConst;
 import com.tale.extension.Commons;
+import com.tale.kits.StringKit;
 import com.tale.model.dto.ErrorCode;
 import com.tale.model.dto.Types;
 import com.tale.model.entity.Comments;
@@ -16,9 +10,19 @@ import com.tale.model.entity.Contents;
 import com.tale.service.CommentsService;
 import com.tale.service.ContentsService;
 import com.tale.service.SiteService;
+import com.tale.ui.RestResponse;
 import com.tale.validators.CommonValidator;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+import sun.security.validator.ValidatorException;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.websocket.server.PathParam;
 import java.net.URLEncoder;
 
 import static com.tale.bootstrap.TaleConst.COMMENT_APPROVED;
@@ -29,33 +33,37 @@ import static com.tale.bootstrap.TaleConst.OPTION_ALLOW_COMMENT_AUDIT;
  * @author biezhi
  * @date 2018/6/4
  */
-@Path
 @Slf4j
+@Controller
 public class ArticleController extends BaseController {
 
-    @Inject
+    @Autowired
     private ContentsService contentsService;
 
-    @Inject
+    @Autowired
     private CommentsService commentsService;
 
-    @Inject
+    @Autowired
     private SiteService siteService;
 
     /**
      * 自定义页面
      */
-    @GetRoute(value = {"/:cid", "/:cid.html"})
-    public String page(@PathParam String cid, Request request) {
+    @GetMapping(value = {"/:cid", "/:cid.html"})
+    public String page(@PathParam("cid") String cid, HttpServletRequest request) {
         Contents contents = contentsService.getContents(cid);
         if (null == contents) {
             return this.render_404();
         }
         if (contents.getAllowComment()) {
-            int cp = request.queryInt("cp", 1);
-            request.attribute("cp", cp);
+            int cp = 1;
+            String cpStr = request.getParameter("cp");
+            if (StringUtils.isNotBlank(cpStr)) {
+                cp = Integer.valueOf(cpStr);
+            }
+            request.setAttribute("cp", cp);
         }
-        request.attribute("article", contents);
+        request.setAttribute("article", contents);
         Contents temp = new Contents();
         temp.setHits(contents.getHits() + 1);
         temp.updateById(contents.getCid());
@@ -71,8 +79,8 @@ public class ArticleController extends BaseController {
     /**
      * 文章页
      */
-    @GetRoute(value = {"article/:cid", "article/:cid.html"})
-    public String post(Request request, @PathParam String cid) {
+    @GetMapping(value = {"article/:cid", "article/:cid.html"})
+    public String post(HttpServletRequest request, @PathParam("cid") String cid) {
         Contents contents = contentsService.getContents(cid);
         if (null == contents) {
             return this.render_404();
@@ -80,11 +88,16 @@ public class ArticleController extends BaseController {
         if (Types.DRAFT.equals(contents.getStatus())) {
             return this.render_404();
         }
-        request.attribute("article", contents);
-        request.attribute("is_post", true);
+        request.setAttribute("article", contents);
+        request.setAttribute("is_post", true);
+
         if (contents.getAllowComment()) {
-            int cp = request.queryInt("cp", 1);
-            request.attribute("cp", cp);
+            int cp = 1;
+            String cpStr = request.getParameter("cp");
+            if (StringUtils.isNotBlank(cpStr)) {
+                cp = Integer.valueOf(cpStr);
+            }
+            request.setAttribute("cp", cp);
         }
         Contents temp = new Contents();
         temp.setHits(contents.getHits() + 1);
@@ -95,28 +108,24 @@ public class ArticleController extends BaseController {
     /**
      * 评论操作
      */
-    @PostRoute(value = "comment")
-    @JSON
-    public RestResponse<?> comment(Request request, Response response,
-                                   @HeaderParam String Referer, Comments comments) {
+    @ResponseBody
+    @PostMapping(value = "comment")
+    public RestResponse<?> comment(HttpServletRequest request, HttpServletResponse response,
+                                   @RequestBody Comments comments) {
 
-        if (StringKit.isBlank(Referer)) {
+
+        String referer = request.getHeader("Referer");
+
+        if (StringKit.isBlank(referer)) {
             return RestResponse.fail(ErrorCode.BAD_REQUEST);
         }
 
-        if (!Referer.startsWith(Commons.site_url())) {
+        if (!referer.startsWith(Commons.site_url())) {
             return RestResponse.fail("非法评论来源");
         }
 
         CommonValidator.valid(comments);
 
-        String  val   = request.address() + ":" + comments.getCid();
-        Integer count = cache.hget(Types.COMMENTS_FREQUENCY, val);
-        if (null != count && count > 0) {
-            return RestResponse.fail("您发表评论太快了，请过会再试");
-        }
-        comments.setIp(request.address());
-        comments.setAgent(request.userAgent());
 
         if (TaleConst.OPTIONS.getBoolean(OPTION_ALLOW_COMMENT_AUDIT, true)) {
             comments.setStatus(COMMENT_NO_AUDIT);
@@ -126,15 +135,15 @@ public class ArticleController extends BaseController {
 
         try {
             commentsService.saveComment(comments);
-            response.cookie("tale_remember_author", URLEncoder.encode(comments.getAuthor(), "UTF-8"), 7 * 24 * 60 * 60);
-            response.cookie("tale_remember_mail", URLEncoder.encode(comments.getMail(), "UTF-8"), 7 * 24 * 60 * 60);
-            if (StringKit.isNotBlank(comments.getUrl())) {
-                response.cookie("tale_remember_url", URLEncoder.encode(comments.getUrl(), "UTF-8"), 7 * 24 * 60 * 60);
-            }
 
-            // 设置对每个文章30秒可以评论一次
-            cache.hset(Types.COMMENTS_FREQUENCY, val, 1, 30);
-            siteService.cleanCache(Types.SYS_STATISTICS);
+            Cookie cookie = new Cookie("tale_remember_author", URLEncoder.encode(comments.getAuthor()));
+            cookie.setMaxAge(7 * 24 * 60 * 60);
+            response.addCookie(cookie);
+            if (StringKit.isNotBlank(comments.getUrl())) {
+                Cookie cookie1 = new Cookie("tale_remember_url", URLEncoder.encode(comments.getUrl()));
+                cookie1.setMaxAge(7 * 24 * 60 * 60);
+                response.addCookie(cookie1);
+            }
 
             return RestResponse.ok();
         } catch (Exception e) {
@@ -147,5 +156,8 @@ public class ArticleController extends BaseController {
             return RestResponse.fail(msg);
         }
     }
+
+
+
 
 }

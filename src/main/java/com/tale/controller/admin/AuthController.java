@@ -1,21 +1,21 @@
 package com.tale.controller.admin;
 
-import com.blade.exception.ValidatorException;
-import com.blade.kit.DateKit;
-import com.blade.kit.EncryptKit;
-import com.blade.kit.StringKit;
-import com.blade.mvc.RouteContext;
-import com.blade.mvc.annotation.Path;
-import com.blade.mvc.annotation.PostRoute;
-import com.blade.mvc.ui.RestResponse;
 import com.tale.annotation.SysLog;
 import com.tale.bootstrap.TaleConst;
 import com.tale.controller.BaseController;
+import com.tale.kits.DateKit;
+import com.tale.kits.EncryptKit;
+import com.tale.kits.StringKit;
 import com.tale.model.entity.Users;
 import com.tale.model.params.LoginParam;
+import com.tale.ui.RestResponse;
 import com.tale.utils.TaleUtils;
 import com.tale.validators.CommonValidator;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import sun.security.validator.ValidatorException;
 
 import static com.tale.bootstrap.TaleConst.LOGIN_ERROR_COUNT;
 import static io.github.biezhi.anima.Anima.select;
@@ -26,11 +26,12 @@ import static io.github.biezhi.anima.Anima.select;
  * Created by biezhi on 2017/2/21.
  */
 @Slf4j
-@Path(value = "admin", restful = true)
+@RestController
+@RequestMapping("admin")
 public class AuthController extends BaseController {
 
     @SysLog("登录后台")
-    @PostRoute("login")
+    @PostMapping("login")
     public RestResponse<?> doLogin(LoginParam loginParam, RouteContext context) {
 
         CommonValidator.valid(loginParam);

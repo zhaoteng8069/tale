@@ -1,11 +1,7 @@
 package com.tale.service;
 
-import com.blade.exception.ValidatorException;
-import com.blade.ioc.annotation.Bean;
-import com.blade.kit.BladeKit;
-import com.blade.kit.DateKit;
-import com.tale.bootstrap.TaleConst;
-import com.tale.extension.Commons;
+import com.tale.exception.BusinessException;
+import com.tale.kits.DateKit;
 import com.tale.model.dto.Comment;
 import com.tale.model.entity.Comments;
 import com.tale.model.entity.Contents;
@@ -15,6 +11,8 @@ import com.vdurmont.emoji.EmojiParser;
 import io.github.biezhi.anima.Anima;
 import io.github.biezhi.anima.enums.OrderBy;
 import io.github.biezhi.anima.page.Page;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +27,7 @@ import static io.github.biezhi.anima.Anima.update;
  * @author biezhi
  * @since 1.3.1
  */
-@Bean
+@Service("commentsService")
 public class CommentsService {
 
     /**
@@ -46,7 +44,7 @@ public class CommentsService {
 
         Contents contents = select().from(Contents.class).byId(comments.getCid());
         if (null == contents) {
-            throw new ValidatorException("不存在的文章");
+            throw new BusinessException("不存在的文章");
         }
         try {
             comments.setOwnerId(contents.getAuthorId());
@@ -130,7 +128,7 @@ public class CommentsService {
         List<Comments> children = new ArrayList<>();
         getChildren(children, comment.getCoid());
         comment.setChildren(children);
-        if (BladeKit.isNotEmpty(children)) {
+        if (!CollectionUtils.isEmpty(children)) {
             comment.setLevels(1);
         }
         return comment;

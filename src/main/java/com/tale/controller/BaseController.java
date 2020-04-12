@@ -1,9 +1,10 @@
 package com.tale.controller;
 
-import com.blade.mvc.http.Request;
 import com.tale.model.entity.Users;
 import com.tale.utils.MapCache;
 import com.tale.utils.TaleUtils;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Created by biezhi on 2017/2/21.
@@ -18,13 +19,13 @@ public abstract class BaseController {
         return THEME + "/" + viewName;
     }
 
-    public BaseController title(Request request, String title) {
-        request.attribute("title", title);
+    public BaseController title(HttpServletRequest request, String title) {
+        request.setAttribute("title", title);
         return this;
     }
 
-    public BaseController keywords(Request request, String keywords) {
-        request.attribute("keywords", keywords);
+    public BaseController keywords(HttpServletRequest request, String keywords) {
+        request.setAttribute("keywords", keywords);
         return this;
     }
 

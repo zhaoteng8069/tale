@@ -1,19 +1,20 @@
 package com.tale.service;
 
-import com.blade.exception.ValidatorException;
-import com.blade.ioc.annotation.Bean;
-import com.blade.ioc.annotation.Inject;
-import com.blade.kit.DateKit;
-import com.blade.kit.StringKit;
+import com.tale.exception.BusinessException;
+import com.tale.kits.DateKit;
 import com.tale.model.dto.Types;
 import com.tale.model.entity.Comments;
 import com.tale.model.entity.Contents;
 import com.tale.model.entity.Relationships;
 import com.tale.model.params.ArticleParam;
+import com.tale.kits.StringKit;
 import com.vdurmont.emoji.EmojiParser;
 import io.github.biezhi.anima.Anima;
 import io.github.biezhi.anima.core.AnimaQuery;
 import io.github.biezhi.anima.page.Page;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import static com.tale.bootstrap.TaleConst.SQL_QUERY_ARTICLES;
 import static io.github.biezhi.anima.Anima.deleteById;
@@ -25,10 +26,10 @@ import static io.github.biezhi.anima.Anima.select;
  * @author biezhi
  * @since 1.3.1
  */
-@Bean
+@Service("contentsService")
 public class ContentsService {
 
-    @Inject
+    @Autowired
     private MetasService metasService;
 
     /**
@@ -38,7 +39,7 @@ public class ContentsService {
      */
     public Contents getContents(String id) {
         Contents contents = null;
-        if (StringKit.isNotBlank(id)) {
+        if (StringUtils.isNotBlank(id)) {
             if (StringKit.isNumber(id)) {
                 contents = select().from(Contents.class).byId(id);
             } else {
@@ -58,7 +59,7 @@ public class ContentsService {
      */
     public Integer publish(Contents contents) {
         if (null == contents.getAuthorId()) {
-            throw new ValidatorException("请登录后发布文章");
+            throw new BusinessException("请登录后发布文章");
         }
 
         contents.setContent(EmojiParser.parseToAliases(contents.getContent()));
@@ -135,15 +136,15 @@ public class ContentsService {
     public Page<Contents> findArticles(ArticleParam articleParam) {
         AnimaQuery<Contents> query = select().from(Contents.class).exclude(Contents::getContent);
 
-        if (StringKit.isNotEmpty(articleParam.getStatus())) {
+        if (StringUtils.isNotEmpty(articleParam.getStatus())) {
             query.and(Contents::getStatus, articleParam.getStatus());
         }
 
-        if (StringKit.isNotEmpty(articleParam.getTitle())) {
+        if (StringUtils.isNotEmpty(articleParam.getTitle())) {
             query.and(Contents::getTitle).like("%" + articleParam.getTitle() + "%");
         }
 
-        if (StringKit.isNotEmpty(articleParam.getCategories())) {
+        if (StringUtils.isNotEmpty(articleParam.getCategories())) {
             query.and(Contents::getCategories).like("%" + articleParam.getCategories() + "%");
         }
 
@@ -154,14 +155,14 @@ public class ContentsService {
     }
 
     private Contents mapContent(Contents contents) {
-        if (StringKit.isNotEmpty(contents.getSlug())) {
+        if (StringUtils.isNotEmpty(contents.getSlug())) {
             String url = "/" + contents.getSlug();
             contents.setUrl(url.replaceAll("[/]+", "/"));
         } else {
             contents.setUrl("/article/" + contents.getCid());
         }
         String content = contents.getContent();
-        if (StringKit.isNotEmpty(content)) {
+        if (StringUtils.isNotEmpty(content)) {
             content = content.replaceAll("\\\\\"", "\\\"");
             contents.setContent(content);
         }

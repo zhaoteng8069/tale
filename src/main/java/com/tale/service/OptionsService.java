@@ -1,9 +1,9 @@
 package com.tale.service;
 
-import com.blade.ioc.annotation.Bean;
-import com.blade.kit.StringKit;
 import com.tale.model.entity.Options;
 import io.github.biezhi.anima.core.AnimaQuery;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +18,7 @@ import static io.github.biezhi.anima.Anima.select;
  * @author biezhi
  * @since 1.3.1
  */
-@Bean
+@Service("optionsService")
 public class OptionsService {
 
     /**
@@ -28,7 +28,7 @@ public class OptionsService {
      * @param value 配置值
      */
     public void saveOption(String key, String value) {
-        if (StringKit.isNotBlank(key) && StringKit.isNotBlank(value)) {
+        if (StringUtils.isNotBlank(key) && StringUtils.isNotBlank(value)) {
             Options options = new Options();
             options.setName(key);
 
@@ -74,7 +74,7 @@ public class OptionsService {
      * @param key 配置key
      */
     public void deleteOption(String key) {
-        if (StringKit.isNotBlank(key)) {
+        if (StringUtils.isNotBlank(key)) {
             delete().from(Options.class).where(Options::getName).like(key + "%").execute();
         }
     }

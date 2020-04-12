@@ -1,14 +1,14 @@
 package com.tale.service;
 
-import com.blade.exception.ValidatorException;
-import com.blade.ioc.annotation.Bean;
-import com.blade.kit.StringKit;
+import com.tale.exception.BusinessException;
 import com.tale.model.dto.Types;
 import com.tale.model.entity.Contents;
 import com.tale.model.entity.Metas;
 import com.tale.model.entity.Relationships;
 import io.github.biezhi.anima.Anima;
 import io.github.biezhi.anima.enums.OrderBy;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,7 +22,7 @@ import static io.github.biezhi.anima.Anima.select;
  * @author biezhi
  * @since 1.3.1
  */
-@Bean
+@Service("metasService")
 public class MetasService {
 
     /**
@@ -31,7 +31,7 @@ public class MetasService {
      * @param type 类型，tag or category
      */
     public List<Metas> getMetas(String type) {
-        if (StringKit.isNotBlank(type)) {
+        if (StringUtils.isNotBlank(type)) {
             return select().from(Metas.class).where(Metas::getType, type)
                     .order(Metas::getSort, OrderBy.DESC)
                     .order(Metas::getMid, OrderBy.DESC)
@@ -46,7 +46,7 @@ public class MetasService {
      * @param type 类型，tag or category
      */
     public Map<String, List<Contents>> getMetaMapping(String type) {
-        if (StringKit.isNotBlank(type)) {
+        if (StringUtils.isNotBlank(type)) {
             List<Metas> metas = getMetas(type);
             if (null != metas) {
                 return metas.stream().collect(Collectors.toMap(Metas::getName, this::getMetaContents));
@@ -73,7 +73,7 @@ public class MetasService {
      * @param name 类型名
      */
     public Metas getMeta(String type, String name) {
-        if (StringKit.isNotBlank(type) && StringKit.isNotBlank(name)) {
+        if (StringUtils.isNotBlank(type) && StringUtils.isNotBlank(name)) {
             return select().bySQL(Metas.class, SQL_QUERY_METAS, type, name).one();
         }
         return null;
@@ -88,9 +88,9 @@ public class MetasService {
      */
     public void saveMetas(Integer cid, String names, String type) {
         if (null == cid) {
-            throw new ValidatorException("项目关联id不能为空");
+            throw new BusinessException("项目关联id不能为空");
         }
-        if (StringKit.isNotBlank(names) && StringKit.isNotBlank(type)) {
+        if (StringUtils.isNotBlank(names) && StringUtils.isNotBlank(type)) {
             String[] nameArr = names.split(",");
             for (String name : nameArr) {
                 this.saveOrUpdate(cid, name, type);
@@ -171,12 +171,12 @@ public class MetasService {
      * @param mid
      */
     public void saveMeta(String type, String name, Integer mid) {
-        if (StringKit.isEmpty(type) || StringKit.isEmpty(name)) {
+        if (StringUtils.isEmpty(type) || StringUtils.isEmpty(name)) {
             return;
         }
         Metas metas = select().from(Metas.class).where(Metas::getType, type).and(Metas::getName, name).one();
         if (null != metas) {
-            throw new ValidatorException("已经存在该项");
+            throw new BusinessException("已经存在该项");
         } else {
             metas = new Metas();
             metas.setName(name);

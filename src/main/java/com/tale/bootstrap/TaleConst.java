@@ -1,7 +1,7 @@
 package com.tale.bootstrap;
 
 
-import com.blade.Environment;
+import com.tale.constants.Environment;
 import com.tale.controller.admin.AdminApiController;
 import com.tale.model.dto.PluginMenu;
 

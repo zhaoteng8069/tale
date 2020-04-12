@@ -1,20 +1,23 @@
 package com.tale.service;
 
-import com.blade.exception.ValidatorException;
-import com.blade.ioc.annotation.Bean;
-import com.blade.ioc.annotation.Inject;
-import com.blade.kit.BladeKit;
-import com.blade.kit.DateKit;
-import com.blade.kit.EncryptKit;
-import com.blade.kit.StringKit;
 import com.tale.bootstrap.SqliteJdbc;
 import com.tale.bootstrap.TaleConst;
+import com.tale.exception.BusinessException;
+import com.tale.kits.BladeKit;
+import com.tale.kits.DateKit;
+import com.tale.kits.EncryptKit;
+import com.tale.kits.StringKit;
 import com.tale.model.dto.*;
 import com.tale.model.entity.*;
 import com.tale.utils.MapCache;
 import com.tale.utils.TaleUtils;
 import io.github.biezhi.anima.enums.OrderBy;
 import io.github.biezhi.anima.page.Page;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import sun.security.validator.ValidatorException;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -32,10 +35,10 @@ import static io.github.biezhi.anima.Anima.select;
  * @author biezhi
  * @since 1.3.1
  */
-@Bean
+@Service("siteService")
 public class SiteService {
 
-    @Inject
+    @Autowired
     private CommentsService commentsService;
 
     public MapCache mapCache = new MapCache();
@@ -59,7 +62,7 @@ public class SiteService {
             TaleConst.INSTALLED = Boolean.TRUE;
             new Logs("初始化站点", null, "", uid).save();
         } catch (Exception e) {
-            throw new ValidatorException("初始化站点失败");
+            throw new BusinessException("初始化站点失败");
         }
     }
 
@@ -108,7 +111,7 @@ public class SiteService {
             List<Integer> cids = select().bySQL(Integer.class,
                                                 "select cid from t_contents where type = ? and status = ? order by random() * cid limit ?",
                                                 Types.ARTICLE, Types.PUBLISH, limit).all();
-            if (BladeKit.isNotEmpty(cids)) {
+            if (!CollectionUtils.isEmpty(cids)) {
                 return select().from(Contents.class).in(Contents::getCid, cids).all();
             }
         }
@@ -206,7 +209,7 @@ public class SiteService {
     public BackResponse backup(String bkType, String bkPath, String fmt) throws Exception {
         BackResponse backResponse = new BackResponse();
         if ("attach".equals(bkType)) {
-            if (StringKit.isBlank(bkPath)) {
+            if (StringUtils.isBlank(bkPath)) {
                 throw new ValidatorException("请输入备份文件存储路径");
             }
             if (!Files.isDirectory(Paths.get(bkPath))) {

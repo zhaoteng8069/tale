@@ -1,11 +1,5 @@
 package com.tale.controller;
 
-import com.blade.ioc.annotation.Inject;
-import com.blade.mvc.RouteContext;
-import com.blade.mvc.annotation.*;
-import com.blade.mvc.http.Request;
-import com.blade.mvc.http.Response;
-import com.blade.mvc.http.Session;
 import com.tale.bootstrap.TaleConst;
 import com.tale.model.dto.Archive;
 import com.tale.model.dto.Types;
@@ -16,7 +10,16 @@ import com.tale.utils.TaleUtils;
 import io.github.biezhi.anima.enums.OrderBy;
 import io.github.biezhi.anima.page.Page;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.websocket.server.PathParam;
 import java.util.List;
 
 import static io.github.biezhi.anima.Anima.select;
@@ -27,11 +30,11 @@ import static io.github.biezhi.anima.Anima.select;
  * @author biezhi
  * @since 1.3.1
  */
-@Path
+@Controller
 @Slf4j
 public class IndexController extends BaseController {
 
-    @Inject
+    @Autowired
     private SiteService siteService;
 
     /**
@@ -39,8 +42,8 @@ public class IndexController extends BaseController {
      *
      * @return
      */
-    @GetRoute
-    public String index(Request request, PageParam pageParam) {
+    @GetMapping
+    public String index(HttpServletRequest request, PageParam pageParam) {
         return this.index(request, 1, pageParam.getLimit());
     }
 
@@ -52,16 +55,16 @@ public class IndexController extends BaseController {
      * @param limit
      * @return
      */
-    @GetRoute(value = {"page/:page", "page/:page.html"})
-    public String index(Request request, @PathParam int page, @Param(defaultValue = "12") int limit) {
+    @GetMapping(value = {"page/:page", "page/:page.html"})
+    public String index(HttpServletRequest request, @PathParam("page") int page, @RequestParam(defaultValue = "12") int limit) {
         page = page < 0 || page > TaleConst.MAX_PAGE ? 1 : page;
         if (page > 1) {
             this.title(request, "第" + page + "页");
         }
-        request.attribute("page_num", page);
-        request.attribute("limit", limit);
-        request.attribute("is_home", true);
-        request.attribute("page_prefix", "/page");
+        request.setAttribute("page_num", page);
+        request.setAttribute("limit", limit);
+        request.setAttribute("is_home", true);
+        request.setAttribute("page_prefix", "/page");
         return this.render("index");
     }
 
@@ -72,19 +75,23 @@ public class IndexController extends BaseController {
      * @param keyword
      * @return
      */
-    @GetRoute(value = {"search/:keyword", "search/:keyword.html"})
-    public String search(Request request, @PathParam String keyword, @Param(defaultValue = "12") int limit) {
+    @GetMapping(value = {"search/:keyword", "search/:keyword.html"})
+    public String search(HttpServletRequest request, @PathParam("keyword") String keyword, @RequestParam(defaultValue = "12") int limit) {
         return this.search(request, keyword, 1, limit);
     }
 
-    @GetRoute(value = {"search", "search.html"})
-    public String search(Request request, @Param(defaultValue = "12") int limit) {
-        String keyword = request.query("s").orElse("");
+    @GetMapping(value = {"search", "search.html"})
+    public String search(HttpServletRequest request, @RequestParam(defaultValue = "12") int limit) {
+        String keyword = request.getParameter("s");
+        if (StringUtils.isBlank(keyword)) {
+            keyword = "";
+        }
         return this.search(request, keyword, 1, limit);
     }
 
-    @GetRoute(value = {"search/:keyword/:page", "search/:keyword/:page.html"})
-    public String search(Request request, @PathParam String keyword, @PathParam int page, @Param(defaultValue = "12") int limit) {
+    @GetMapping(value = {"search/:keyword/:page", "search/:keyword/:page.html"})
+    public String search(HttpServletRequest request, @PathParam("keyword") String keyword, @PathParam("page") int page,
+                         @RequestParam(defaultValue = "12") int limit) {
 
         page = page < 0 || page > TaleConst.MAX_PAGE ? 1 : page;
 
@@ -95,10 +102,10 @@ public class IndexController extends BaseController {
                 .order(Contents::getCreated, OrderBy.DESC)
                 .page(page, limit);
 
-        request.attribute("articles", articles);
-        request.attribute("type", "搜索");
-        request.attribute("keyword", keyword);
-        request.attribute("page_prefix", "/search/" + keyword);
+        request.setAttribute("articles", articles);
+        request.setAttribute("type", "搜索");
+        request.setAttribute("keyword", keyword);
+        request.setAttribute("page_prefix", "/search/" + keyword);
         return this.render("page-category");
     }
 
@@ -107,11 +114,11 @@ public class IndexController extends BaseController {
      *
      * @return
      */
-    @GetRoute(value = {"archives", "archives.html"})
-    public String archives(Request request) {
+    @GetMapping(value = {"archives", "archives.html"})
+    public String archives(HttpServletRequest request) {
         List<Archive> archives = siteService.getArchives();
-        request.attribute("archives", archives);
-        request.attribute("is_archive", true);
+        request.setAttribute("archives", archives);
+        request.setAttribute("is_archive", true);
         return this.render("archives");
     }
 
@@ -120,8 +127,8 @@ public class IndexController extends BaseController {
      *
      * @return
      */
-    @GetRoute(value = {"feed", "feed.xml", "atom.xml"})
-    public void feed(Response response) {
+    @GetMapping(value = {"feed", "feed.xml", "atom.xml"})
+    public void feed(HttpServletResponse response) {
 
         List<Contents> articles = select().from(Contents.class)
                 .where(Contents::getType, Types.ARTICLE)
@@ -132,8 +139,8 @@ public class IndexController extends BaseController {
 
         try {
             String xml = TaleUtils.getRssXml(articles);
-            response.contentType("text/xml; charset=utf-8");
-            response.body(xml);
+            response.setContentType("text/xml; charset=utf-8");
+            /*response.body(xml);*/
         } catch (Exception e) {
             log.error("生成 rss 失败", e);
         }
@@ -144,8 +151,8 @@ public class IndexController extends BaseController {
      *
      * @return
      */
-    @GetRoute(value = {"sitemap", "sitemap.xml"})
-    public void sitemap(Response response) {
+    @GetMapping(value = {"sitemap", "sitemap.xml"})
+    public void sitemap(HttpServletResponse response) {
         List<Contents> articles = select().from(Contents.class)
                 .where(Contents::getType, Types.ARTICLE)
                 .and(Contents::getStatus, Types.PUBLISH)
@@ -154,8 +161,8 @@ public class IndexController extends BaseController {
                 .all();
         try {
             String xml = TaleUtils.getSitemapXml(articles);
-            response.contentType("text/xml; charset=utf-8");
-            response.body(xml);
+            response.setContentType("text/xml; charset=utf-8");
+            /*response.body(xml);*/
         } catch (Exception e) {
             log.error("生成 sitemap 失败", e);
         }
@@ -164,9 +171,9 @@ public class IndexController extends BaseController {
     /**
      * 注销
      */
-    @Route(value = "logout")
+    /*@RequestMapping(value = "logout")
     public void logout(RouteContext context) {
         TaleUtils.logout(context);
-    }
+    }*/
 
 }

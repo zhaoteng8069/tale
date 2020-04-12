@@ -13,6 +13,7 @@ import com.sun.syndication.io.WireFeedOutput;
 import com.tale.bootstrap.TaleConst;
 import com.tale.extension.Commons;
 import com.tale.extension.Theme;
+import com.tale.kits.StringKit;
 import com.tale.model.dto.RememberMe;
 import com.tale.model.entity.Contents;
 import com.tale.model.entity.Options;
